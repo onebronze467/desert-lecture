@@ -78,24 +78,131 @@ describe("SurveyFactory Contract", () => {
 
   it("should deploy with correct minimum amounts", async () => {
     // TODO: check min_pool_amount and min_reward_amount
+    const { ethers } = await network.connect();
+
+    expect(await factory.min_pool_amount()).to.equal(
+        ethers.parseEther("50")
+    );
+
+    expect(await factory.min_reward_amount()).to.equal(
+        ethers.parseEther("0.1")
+    );
   });
 
   it("should create a new survey when valid values are provided", async () => {
     // TODO: prepare SurveySchema and call createSurvey with msg.value
     // TODO: check event SurveyCreated emitted
     // TODO: check surveys array length increased
+    const { ethers } = await network.connect();
+
+    const survey = {
+        title: "Test Survey",
+        description: "Test Description",
+        targetNumber: 100,
+        questions: [
+            {
+                question: "Question 1?",
+                options: ["A", "B"],
+            },
+        ],
+    };
+
+    await expect(
+        factory.createSurvey(survey, {
+            value: ethers.parseEther("50"),
+        })
+    ).to.emit(factory, "SurveyCreated");
+
+    const surveys = await factory.getSurveys();
+    expect(surveys.length).to.equal(1);
+
   });
 
   it("should revert if pool amount is too small", async () => {
     // TODO: expect revert when msg.value < min_pool_amount
+    const { ethers } = await network.connect();
+
+    const survey = {
+        title: "Test Survey",
+        description: "Test Description",
+        targetNumber: 100,
+        questions: [
+            {
+                question: "Question 1?",
+                options: ["A", "B"],
+            },
+        ],
+    };
+
+    await expect(
+        factory.createSurvey(survey, {
+            value: ethers.parseEther("49"),
+        })
+    ).to.be.revertedWith("Insufficient pool amount");
   });
 
   it("should revert if reward amount per respondent is too small", async () => {
     // TODO: expect revert when msg.value / targetNumber < min_reward_amount
+    const { ethers } = await network.connect();
+
+    const survey = {
+        title: "Test Survey",
+        description: "Test Description",
+        targetNumber: 1000,
+        questions: [
+            {
+                question: "Question 1?",
+                options: ["A", "B"],
+            },
+        ],
+    };
+
+    await expect(
+        factory.createSurvey(survey, {
+            value: ethers.parseEther("50"),
+        })
+    ).to.be.revertedWith("Insufficient reward");
   });
 
   it("should store created surveys and return them from getSurveys", async () => {
     // TODO: create multiple surveys and check getSurveys output
+    const { ethers } = await network.connect();
+
+    const survey1 = {
+        title: "Survey 1",
+        description: "Description 1",
+        targetNumber: 100,
+        questions: [
+            {
+                question: "Question 1?",
+                options: ["A", "B"],
+            },
+        ],
+    };
+
+    const survey2 = {
+        title: "Survey 2",
+        description: "Description 2",
+        targetNumber: 200,
+        questions: [
+            {
+                question: "Question 2?",
+                options: ["Yes", "No"],
+            },
+        ],
+    };
+
+    await factory.createSurvey(survey1, {
+        value: ethers.parseEther("50"),
+    });
+
+    await factory.createSurvey(survey2, {
+        value: ethers.parseEther("50"),
+    });
+
+    const surveys = await factory.getSurveys();
+
+    expect(surveys.length).to.equal(2);
   });
 });
 

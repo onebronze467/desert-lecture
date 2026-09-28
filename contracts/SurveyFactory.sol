@@ -13,8 +13,8 @@ struct SurveySchema {
 event SurveyCreated(address);
 
 contract SurveyFactory {
-    uint256 min_pool_amount;
-    uint256 min_reward_amount;
+    uint256 public min_pool_amount;
+    uint256 public min_reward_amount;
     Survey[] surveys;
 
     // ex)
