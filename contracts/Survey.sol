@@ -6,15 +6,25 @@ struct Question {
     string[] options;
 }
 
+struct Answer {
+    address respondent;
+    uint8[] answers;
+}
+
 contract Survey {
     string public title;
     string public description;
-    Question[] public questions;
+    uint256 public targetNumber;
+    uint256 public rewardAmount;
+    Question[] questions;
+    Answer[] answers;
 
     // memory, storage, calldata
-    constructor(string memory _title, string memory _description, Question[] memory _questions) {
+    constructor(string memory _title, string memory _description, uint256 _targetNumber, Question[] memory _questions) payable {
         title = _title;
         description = _description;
+        targetNumber = _targetNumber;
+        rewardAmount = msg.value / _targetNumber;
 
         for (uint i = 0; i < _questions.length; i++) {
             questions.push(Question({
@@ -25,6 +35,22 @@ contract Survey {
             // q.question = _questions[i].question;
             // q.options = _questions[i].options;
         }
+    }
+
+    function submitAnswer(Answer calldata _answer) external {
+        // length validation
+        require(_answer.answers.length == questions.length, "Mismatch answers length");
+
+        require(answers.length < targetNumber, "This survey has been ended");
+        answers.push(Answer({
+            respondent: _answer.respondent,
+            answers: _answer.answers
+        }));
+        payable(msg.sender).transfer(rewardAmount);
+    }
+
+    function getAnswers() external view returns (Answer[] memory) {
+        return answers;
     }
 
     function getQuestions() external view returns (Question[] memory) {
