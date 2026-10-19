@@ -94,11 +94,14 @@ it("Survey storage layout", async () => {
     const slot3Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(3, 32));
     const slot4Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(4, 32));
     const slot5Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(5, 32));
+    const slot6Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(6, 32));
 
 
     const decodeUni = (hex: string) => Buffer.from(hex.slice(2), "hex").toString("utf8");  
 
     const nextHash = (hex:string, i : number) => "0x" + (BigInt(hex) + BigInt(i)).toString(16);
+
+    console.log(slot0Data)
 
     console.log(decodeUni(slot0Data));
 
@@ -113,12 +116,22 @@ it("Survey storage layout", async () => {
 
     const pDesc = keccak256(ethers.toBeHex(1, 32));
 
-    const desc = await ethers.provider.getStorage(await survey.getAddress(), pDesc);
+    const desc0 = await ethers.provider.getStorage(await survey.getAddress(), pDesc);
+    const desc1 = await ethers.provider.getStorage(await survey.getAddress(), nextHash(pDesc, 1));
+    const desc2 = await ethers.provider.getStorage(await survey.getAddress(), nextHash(pDesc, 2));
+    const desc3 = await ethers.provider.getStorage(await survey.getAddress(), nextHash(pDesc, 3));
+    const desc4 = await ethers.provider.getStorage(await survey.getAddress(), nextHash(pDesc, 4));
 
-    console.log(decodeUni(desc));
+    console.log(desc0);
+    console.log(desc1);
+    console.log(desc2);
+    console.log(desc3);
+    console.log(desc4);
 
 
-    console.log("\n--- Array types ---");
+
+
+    console.log("\n--- Array & Structure types ---");
     console.log("slot4Data", slot4Data);
     const pQuestions = keccak256(ethers.toBeHex(4, 32));
 
@@ -133,6 +146,13 @@ it("Survey storage layout", async () => {
     console.log("questions1_option[]", questions1_option_array);
     console.log("questions2", questions2, decodeUni(questions2));
     console.log("questions2_option[]", questions2_option_array);
+
+
+    console.log(slot6Data);
+    const addr = "0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199";
+    const mapKeyAddr = keccak256(ethers.toBeHex(addr, 32) + ethers.toBeHex(6, 32).slice(2));
+    const mapp1Value = await ethers.provider.getStorage(survey.getAddress(), mapKeyAddr);
+    console.log( mapp1Value);
 });
 
 describe("SurveyFactory Contract", () => {

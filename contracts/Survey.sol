@@ -18,6 +18,8 @@ contract Survey {
     uint256 public rewardAmount;
     Question[] questions;
     Answer[] answers;
+    mapping(address => uint) testMap;
+
 
     // memory, storage, calldata
     constructor(string memory _title, string memory _description, uint256 _targetNumber, Question[] memory _questions) payable {
@@ -25,6 +27,7 @@ contract Survey {
         description = _description;
         targetNumber = _targetNumber;
         rewardAmount = msg.value / _targetNumber;
+        testMap[0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199] = 100;
    
 
         for (uint i = 0; i < _questions.length; i++) {
