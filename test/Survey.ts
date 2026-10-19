@@ -7,7 +7,7 @@ interface Question {
     options: string[];
 }
 
-it("Survey init", async () => {
+it("Survey init0", async () => {
     const { ethers } = await network.connect();
 
     const title = "막무가내 설문조사";
@@ -298,3 +298,160 @@ describe("SurveyFactory Contract", () => {
   });
 });
 
+describe("Survey init", () => {
+  const title = "막무가내 설문조사라면";
+  const description =
+    "중앙화된 설문조사로서, 모든 데이터는 공개되지 않으며 설문조사를 게시한자만 볼 수 있습니다.";
+  const questions: Question[] = [
+    {
+      question: "누가 내 응답을 관리할때 더 솔직할 수 있을까요?",
+      options: [
+        "구글폼 운영자",
+        "탈중앙화된 블록체인 (관리주체 없으며 모든 데이터 공개)",
+        "상관없음",
+      ],
+    },
+  ];
+
+  const getSurveyContractAndEthers = async (survey: {
+    title: string;
+    description: string;
+    targetNumber: number;
+    questions: Question[];
+  }) => {
+    const { ethers } = await network.connect();
+    const cSurvey = await ethers.deployContract("Survey", [
+      survey.title,
+      survey.description,
+      survey.targetNumber,
+      survey.questions,
+    ],
+{
+    value: ethers.parseEther("1"),
+});
+    return { ethers, cSurvey };
+  };
+
+  describe("Deployment", () => {
+    it("should store survey info correctly", async () => {
+      const { ethers, cSurvey } = await getSurveyContractAndEthers({
+        title,
+        description,
+        targetNumber: 10,
+        questions,
+      }
+    );
+    expect(await cSurvey.title()).to.equal(title);
+    expect(await cSurvey.description()).to.equal(description);
+    expect(await cSurvey.targetNumber()).to.equal(10);
+    });
+    it("should calculate rewardAmount correctly", async () => {
+        const { ethers, cSurvey } = await getSurveyContractAndEthers({
+            title,
+            description,
+            targetNumber: 10,
+            questions,
+        });
+        expect(await cSurvey.rewardAmount()).to.equal(ethers.parseEther("0.1"));
+    });
+  });
+
+  describe("Questions and Answers", () => {
+    it("should return questions correctly", async () => {
+        const { cSurvey } = await getSurveyContractAndEthers({
+            title,
+            description,
+            targetNumber: 10,
+            questions,
+        });
+        const storedQuestions = await cSurvey.getQuestions();
+        expect(storedQuestions.length).to.equal(questions.length);
+        expect(storedQuestions[0].question).to.equal(questions[0].question);
+        expect(storedQuestions[0].options.length).to.equal(
+            questions[0].options.length
+        );
+    });
+
+    it("should allow valid answer submission", async () => {
+      const { ethers, cSurvey } = await getSurveyContractAndEthers({
+        title,
+        description,
+        targetNumber: 10,
+        questions,
+      });
+
+      const [, respondent] = await ethers.getSigners();
+      await cSurvey.connect(respondent).submitAnswer({
+        respondent: respondent.address,
+        answers: [1],
+      });
+      
+      const storedAnswers = await cSurvey.getAnswers();
+      expect(storedAnswers.length).to.equal(1);
+      expect(storedAnswers[0].respondent).to.equal(respondent.address);
+      expect(Array.from(storedAnswers[0].answers)).to.deep.equal([1]);
+    });
+
+    it("should revert if answer length mismatch", async () => {
+        const { ethers, cSurvey } = await getSurveyContractAndEthers({
+            title,
+            description,
+            targetNumber: 10,
+            questions,
+        });
+        
+        const [, respondent] = await ethers.getSigners();
+        await expect(
+            cSurvey.connect(respondent).submitAnswer({
+                respondent: respondent.address,
+                answers: [],
+            })
+        ).to.be.revertedWith("Mismatch answers length");
+    });
+
+    it("should revert if target reached", async () => {
+      const { ethers, cSurvey } = await getSurveyContractAndEthers({
+        title,
+        description,
+        targetNumber: 1,
+        questions,
+      });
+      
+      const [, respondent1, respondent2] = await ethers.getSigners();
+      await cSurvey.connect(respondent1).submitAnswer({
+        respondent: respondent1.address,
+        answers: [1],
+      });
+      
+      await expect(
+        cSurvey.connect(respondent2).submitAnswer({
+            respondent: respondent2.address,
+            answers: [0],
+            })
+        ).to.be.revertedWith("This survey has been ended");
+    });
+  });
+
+  describe("Rewards", () => {
+    it("should pay correct reward to respondent", async () => {
+        const { ethers, cSurvey } = await getSurveyContractAndEthers({
+            title,
+            description,
+            targetNumber: 10,
+            questions,
+    });
+    const [, respondent] = await ethers.getSigners();
+    const balanceBefore = await ethers.provider.getBalance(respondent.address);
+    const rewardAmount = await cSurvey.rewardAmount();
+    const tx = await cSurvey.connect(respondent).submitAnswer({
+        respondent: respondent.address,
+        answers: [1],
+    })
+
+    const receipt = await tx.wait();
+    expect(receipt).to.not.equal(null);
+    const balanceAfter = await ethers.provider.getBalance(respondent.address);
+     expect(balanceAfter - balanceBefore + receipt!.fee).to.equal(rewardAmount);
+    });
+  });
+});
