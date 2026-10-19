@@ -22,45 +22,28 @@ it("Survey init", async () => {
         },
     ];
     
-    const factory = await ethers.deployContract("SurveyFactory", [
-        ethers.parseEther("50"),
-        ethers.parseEther("0.1"),
-    ]);
-    const tx = await factory.createSurvey({ title, description, targetNumber : 100, questions },
+    
+    const survey = await ethers.deployContract("Survey", [ title, description, 100, questions ],
         {
             value: ethers.parseEther("100"),
         },
     );
 
 
-    // const surveys = await factory.getSurveys();
+    const slot0Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(0, 32));
+    const slot1Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(1, 32));
+    const slot2Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(2, 32));
+    const slot3Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(3, 32));
+    const slot4Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(4, 32));
+    const slot5Data = await ethers.provider.getStorage(survey.getAddress(), ethers.toBeHex(5, 32));
 
-    const receipt = await tx.wait();
-    let surveyAddress;
-    receipt?.logs.forEach(log => {
-        const event = factory.interface.parseLog(log)
-        if(event?.name == "SurveyCreated") {
-            surveyAddress = event.args[0];
-        }
-    })
+    console.log(Buffer.from(slot0Data.slice(2), "hex").toString("utf-8"));
+    console.log(slot1Data);
+    console.log(slot2Data);
+    console.log(slot3Data);
+    console.log(slot4Data);
+    console.log(slot5Data);
 
-
-    // const survey = await ether.deployContract("Survey", [title, descriprtion, ...])
-    const surveyC = await ethers.getContractFactory("Survey");
-    const signers = await ethers.getSigners();
-    const respondent = signers[0];
-
-    if(surveyAddress) {
-        const survey = await surveyC.attach(surveyAddress);
-        await survey.connect(respondent);
-        console.log(ethers.formatEther(await ethers.provider.getBalance(respondent)));
-        const submitTx = await survey.submitAnswer({
-            respondent,
-            answers: [1],
-        });
-        await submitTx.wait();
-        console.log(ethers.formatEther(await ethers.provider.getBalance(respondent)));
-    }
 });
 
 describe("SurveyFactory Contract", () => {

@@ -16,6 +16,8 @@ contract Survey {
     string public description;
     uint256 public targetNumber;
     uint256 public rewardAmount;
+    bool testFlag;
+    int16 testInteger;
     Question[] questions;
     Answer[] answers;
 
@@ -25,6 +27,8 @@ contract Survey {
         description = _description;
         targetNumber = _targetNumber;
         rewardAmount = msg.value / _targetNumber;
+        testFlag = true;
+        testInteger = 10000;
 
         for (uint i = 0; i < _questions.length; i++) {
             questions.push(Question({
@@ -57,3 +61,4 @@ contract Survey {
         return questions;
     }
 }
+
