@@ -431,6 +431,7 @@ describe("Survey init", () => {
         ).to.be.revertedWith("This survey has been ended");
     });
   });
+  
 
   describe("Rewards", () => {
     it("should pay correct reward to respondent", async () => {
