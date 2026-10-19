@@ -98,14 +98,16 @@ it("Survey storage layout", async () => {
 
     const decodeUni = (hex: string) => Buffer.from(hex.slice(2), "hex").toString("utf8");  
 
+    const nextHash = (hex:string, i : number) => "0x" + (BigInt(hex) + BigInt(i)).toString(16);
+
     console.log(decodeUni(slot0Data));
 
-    console.log("private types");
+    console.log("\n--- private types ---");
     console.log(slot2Data);
     console.log(slot3Data);
     
 
-    console.log("long string types");
+    console.log("\n--- long string types ---");
     console.log(slot1Data);
 
 
@@ -116,6 +118,21 @@ it("Survey storage layout", async () => {
     console.log(decodeUni(desc));
 
 
+    console.log("\n--- Array types ---");
+    console.log("slot4Data", slot4Data);
+    const pQuestions = keccak256(ethers.toBeHex(4, 32));
+
+    const questions1 =  await ethers.provider.getStorage(survey.getAddress(), nextHash(pQuestions, 0));
+    const questions1_option_array =  await ethers.provider.getStorage(survey.getAddress(), nextHash(pQuestions, 1));
+
+    const questions2 =  await ethers.provider.getStorage(survey.getAddress(), nextHash(pQuestions, 2));
+    const questions2_option_array =  await ethers.provider.getStorage(survey.getAddress(), nextHash(pQuestions, 3));
+
+
+    console.log("questions1", questions1);
+    console.log("questions1_option[]", questions1_option_array);
+    console.log("questions2", questions2, decodeUni(questions2));
+    console.log("questions2_option[]", questions2_option_array);
 });
 
 describe("SurveyFactory Contract", () => {
